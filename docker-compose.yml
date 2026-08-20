@@ -1,0 +1,12 @@
+services:
+  position-and-risk-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: position-risk-engine
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - RUST_LOG=position_and_risk_engine=info,tower_http=info
+    restart: unless-stopped

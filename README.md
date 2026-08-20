@@ -212,23 +212,34 @@ sequenceDiagram
 
 ## 🚀 Getting Started
 
-### 1. Run Automated Unit Tests
+### 1. Run Automated Tests
 ```bash
 cargo test
 ```
 
-### 2. Launch the Engine
+### 2. Launch Locally (Bare Metal)
 ```bash
 cargo run
 ```
+The server starts at `http://localhost:3000`.
 
-The server starts at `http://127.0.0.1:3000`.
+### 3. Launch via Docker Container 🐳
+You can build and run the engine inside a lightweight container using **Docker** or **Docker Compose**:
 
-### 3. Endpoints
-- **Web Dashboard**: Open [`http://127.0.0.1:3000/`](http://127.0.0.1:3000/) in your browser.
+```bash
+# Option A: Using Docker Compose
+docker compose up --build
+
+# Option B: Using Docker CLI
+docker build -t position-risk-engine .
+docker run -p 3000:3000 position-risk-engine
+```
+
+### 4. Endpoints
+- **Web Dashboard**: Open [`http://localhost:3000/`](http://localhost:3000/) in your browser.
 - **REST API**:
   ```bash
-  curl -s http://127.0.0.1:3000/api/portfolio | jq .
+  curl -s http://localhost:3000/api/portfolio | jq .
   ```
 
 ---

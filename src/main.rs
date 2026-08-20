@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "position_and_risk_engine=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "position_and_risk_engine=info,tower_http=info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -23,12 +23,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build the Axum application router using the factory
     let app = create_app(state);
 
-    // Bind server to address
-    let port = 3000;
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    tracing::info!("🚀 Position & Risk Engine running at http://{}", addr);
-    tracing::info!("📊 Dashboard UI: http://{}/", addr);
-    tracing::info!("🔗 API Endpoint: http://{}/api/portfolio", addr);
+    // Read port from environment or default to 3000
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(3000);
+
+    // Bind to 0.0.0.0 to support containerized network bridging
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    tracing::info!("🚀 Position & Risk Engine running at http://0.0.0.0:{}", port);
+    tracing::info!("📊 Dashboard UI: http://localhost:{}/", port);
+    tracing::info!("🔗 API Endpoint: http://localhost:{}/api/portfolio", port);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
