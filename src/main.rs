@@ -1,6 +1,5 @@
-use position_and_risk_engine::{create_app, mock_data};
+use position_and_risk_engine::{create_app, InMemoryPositionRepository};
 use std::{net::SocketAddr, sync::Arc};
-use tokio::sync::RwLock;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -14,14 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    tracing::info!("Initializing Position & Risk Engine...");
+    tracing::info!("Initializing Position & Risk Engine with Repository Layer...");
 
-    // Initialize in-memory state with mock portfolio
-    let initial_positions = mock_data::get_mock_positions();
-    let state = Arc::new(RwLock::new(initial_positions));
+    // Initialize InMemory repository (can be swapped for PostgresPositionRepository)
+    let repository = Arc::new(InMemoryPositionRepository::new());
 
-    // Build the Axum application router using the factory
-    let app = create_app(state);
+    // Build the Axum application router with injected repository trait
+    let app = create_app(repository);
 
     // Read port from environment or default to 3000
     let port: u16 = std::env::var("PORT")

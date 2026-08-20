@@ -1,21 +1,52 @@
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
+use serde::Deserialize;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
-use crate::domain::{build_portfolio_response, PortfolioResponse, Position};
+use crate::domain::{build_portfolio_response, PortfolioResponse};
+use crate::repository::PositionRepository;
 
-/// Shared thread-safe application state.
+/// Shared application state parameterized by the `PositionRepository` trait.
 ///
-/// In a production system, this could interface with an in-memory cache,
-/// order management system (OMS), or streaming market data pipeline.
-pub type AppState = Arc<RwLock<Vec<Position>>>;
+/// Enables dependency injection, allowing easy substitution with real database adapters
+/// (e.g. PostgreSQL, Redis) or mock test doubles.
+pub type AppState = Arc<dyn PositionRepository>;
 
 /// HTTP Handler for `GET /api/portfolio`.
 ///
-/// Retrieves all positions from state, executes real-time PnL and risk exposure
-/// computations, and returns the serialized JSON payload.
-pub async fn get_portfolio(State(state): State<AppState>) -> Json<PortfolioResponse> {
-    let positions = state.read().await;
-    let response = build_portfolio_response(&positions);
-    Json(response)
+/// Fetches positions from the repository trait, calculates real-time Mark-to-Market PnL,
+/// exposure and risk allocation, and returns the response DTO.
+pub async fn get_portfolio(
+    State(repo): State<AppState>,
+) -> Result<Json<PortfolioResponse>, (StatusCode, String)> {
+    match repo.get_all_positions().await {
+        Ok(positions) => Ok(Json(build_portfolio_response(&positions))),
+        Err(err) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to retrieve portfolio: {err}"),
+        )),
+    }
+}
+
+/// Payload for updating real-time asset mark-to-market prices.
+#[derive(Debug, Deserialize)]
+pub struct UpdatePricePayload {
+    pub price: f64,
+}
+
+/// HTTP Handler for `POST /api/positions/:ticker/price`.
+///
+/// Updates the real-time price of an asset, triggering instant mark-to-market recalculations.
+pub async fn update_asset_price(
+    State(repo): State<AppState>,
+    Path(ticker): Path<String>,
+    Json(payload): Json<UpdatePricePayload>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    match repo.update_price(&ticker, payload.price).await {
+        Ok(()) => Ok(StatusCode::OK),
+        Err(err) => Err((StatusCode::NOT_FOUND, format!("Update failed: {err}"))),
+    }
 }

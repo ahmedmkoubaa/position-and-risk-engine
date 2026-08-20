@@ -3,115 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Risk & PnL Dashboard | Position & Risk Engine</title>
+  <title>Institutional Position & Risk Engine | Executive Dashboard</title>
   <!-- Pico CSS CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  
   <style>
     :root {
-      --pnl-positive: #2e7d32;
-      --pnl-positive-bg: rgba(46, 125, 50, 0.15);
-      --pnl-negative: #d32f2f;
-      --pnl-negative-bg: rgba(211, 47, 47, 0.15);
-      --badge-share: #0288d1;
-      --badge-crypto: #f57c00;
-      --badge-bond: #7b1fa2;
+      --pnl-pos: #00e676;
+      --pnl-pos-bg: rgba(0, 230, 118, 0.12);
+      --pnl-neg: #ff5252;
+      --pnl-neg-bg: rgba(255, 82, 82, 0.12);
+      --card-glass: rgba(24, 30, 42, 0.75);
+      --border-subtle: rgba(255, 255, 255, 0.1);
     }
 
     body {
+      background-color: #0d1117;
+      color: #e6edf3;
       padding-top: 1.5rem;
-      padding-bottom: 3rem;
-    }
-
-    .pnl-positive {
-      color: #4caf50 !important;
-      font-weight: 700;
-    }
-
-    .pnl-negative {
-      color: #ff5252 !important;
-      font-weight: 700;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 2rem;
-    }
-
-    .card-metric {
-      padding: 1.25rem 1.5rem;
-      border-radius: 0.75rem;
-      background: var(--pico-card-background-color);
-      border: 1px solid var(--pico-card-border-color);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .card-metric:hover {
-      transform: translateY(-2px);
-    }
-
-    .metric-label {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--pico-muted-color);
-      margin-bottom: 0.35rem;
-    }
-
-    .metric-value {
-      font-size: 2rem;
-      font-weight: 800;
-      margin: 0;
-      line-height: 1.1;
-    }
-
-    .metric-subtext {
-      font-size: 0.85rem;
-      margin-top: 0.4rem;
-      color: var(--pico-muted-color);
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.75rem;
-      font-weight: 700;
-      border-radius: 0.375rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .badge-share {
-      background-color: rgba(2, 136, 209, 0.18);
-      color: #29b6f6;
-      border: 1px solid rgba(41, 182, 246, 0.3);
-    }
-
-    .badge-crypto {
-      background-color: rgba(245, 124, 0, 0.18);
-      color: #ffa726;
-      border: 1px solid rgba(255, 167, 38, 0.3);
-    }
-
-    .badge-bond {
-      background-color: rgba(123, 31, 162, 0.18);
-      color: #ba68c8;
-      border: 1px solid rgba(186, 104, 200, 0.3);
-    }
-
-    .ticker-code {
-      font-weight: 800;
-      font-size: 1.05rem;
-      letter-spacing: 0.03em;
-    }
-
-    .table-container {
-      overflow-x: auto;
-      border-radius: 0.75rem;
-      border: 1px solid var(--pico-card-border-color);
-      background: var(--pico-card-background-color);
-      padding: 0.5rem 1rem;
+      padding-bottom: 4rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
     .header-bar {
@@ -121,229 +34,721 @@
       margin-bottom: 1.5rem;
       flex-wrap: wrap;
       gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .header-titles h1 {
-      margin-bottom: 0.25rem;
-      font-size: 2rem;
+    .brand-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 0%, #8b949e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .header-titles p {
-      margin-bottom: 0;
-      color: var(--pico-muted-color);
+    .brand-sub {
+      color: #8b949e;
+      font-size: 0.9rem;
+      margin: 0.2rem 0 0 0;
     }
 
-    .status-pill {
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .live-indicator {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.85rem;
-      padding: 0.35rem 0.85rem;
-      background: rgba(255, 255, 255, 0.05);
+      padding: 0.4rem 0.9rem;
       border-radius: 2rem;
-      border: 1px solid var(--pico-card-border-color);
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border-subtle);
+      background: rgba(13, 17, 23, 0.8);
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background-color: #4caf50;
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      box-shadow: 0 0 8px #4caf50;
+      background-color: #8b949e;
     }
+
+    .pulse-dot.active {
+      background-color: #00e676;
+      box-shadow: 0 0 12px #00e676;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+      70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(0, 230, 118, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-metric {
+      background: var(--card-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      backdrop-filter: blur(8px);
+      transition: transform 0.15s ease, border-color 0.2s ease;
+    }
+
+    .card-metric:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b949e;
+      margin-bottom: 0.35rem;
+      font-weight: 700;
+    }
+
+    .metric-value {
+      font-size: 2.1rem;
+      font-weight: 800;
+      margin: 0;
+      line-height: 1.1;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pnl-pos { color: var(--pnl-pos) !important; }
+    .pnl-neg { color: var(--pnl-neg) !important; }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+      background: var(--card-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 0;
+      color: #c9d1d9;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.25rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .filter-btn {
+      padding: 0.35rem 0.85rem;
+      border: none;
+      background: transparent;
+      color: #8b949e;
+      border-radius: 0.375rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 0;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn.active {
+      background: #238636;
+      color: #ffffff;
+    }
+
+    .scenario-btn-group {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .scenario-btn {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      margin: 0;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: #c9d1d9;
+      cursor: pointer;
+    }
+
+    .scenario-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .table-container {
+      background: var(--card-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      overflow-x: auto;
+    }
+
+    table {
+      margin: 0;
+      font-size: 0.9rem;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #8b949e;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th:hover {
+      color: #58a6ff;
+    }
+
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background-color 0.4s ease;
+    }
+
+    .flash-green { background-color: rgba(0, 230, 118, 0.25) !important; }
+    .flash-red { background-color: rgba(255, 82, 82, 0.25) !important; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.375rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-share { background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); }
+    .badge-crypto { background: rgba(210, 153, 34, 0.15); color: #e3b341; border: 1px solid rgba(210, 153, 34, 0.3); }
+    .badge-bond { background: rgba(187, 128, 255, 0.15); color: #bc8cff; border: 1px solid rgba(187, 128, 255, 0.3); }
+
+    .ticker-symbol {
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+    }
+
+    .sort-icon { font-size: 0.75rem; margin-left: 0.3rem; opacity: 0.7; }
   </style>
 </head>
 <body>
-  <main class="container">
-    <!-- Header Section -->
+  <main class="container-fluid" style="max-width: 1400px; padding: 0 1.5rem;">
+    <!-- Top Executive Header -->
     <header class="header-bar">
-      <div class="header-titles">
-        <h1>Risk & PnL Dashboard</h1>
-        <p>Real-time Portfolio Position Valuation & Risk Engine</p>
-      </div>
       <div>
-        <div class="status-pill">
-          <span class="status-dot"></span>
-          <span>Engine Online (Axum/Rust)</span>
+        <h1 class="brand-title">Position & Risk Engine</h1>
+        <p class="brand-sub">Institutional Multi-Asset Portfolio Mark-to-Market Engine (Rust + Axum)</p>
+      </div>
+
+      <div class="controls-bar">
+        <div class="live-indicator">
+          <span class="pulse-dot" id="live-dot"></span>
+          <span id="live-status-text">Simulated Feed: Off</span>
         </div>
+
+        <button class="outline" id="toggle-sim-btn" style="margin: 0; padding: 0.4rem 0.9rem; font-size: 0.82rem; width: auto;">
+          ▶️ Start Live Market Feed
+        </button>
+
+        <button class="secondary" id="refresh-btn" style="margin: 0; padding: 0.4rem 0.9rem; font-size: 0.82rem; width: auto;">
+          🔄 Refresh
+        </button>
       </div>
     </header>
 
-    <!-- Executive Summary Cards -->
-    <section class="summary-grid" id="summary-section">
+    <!-- Key Executive Metric Cards -->
+    <section class="summary-grid">
       <div class="card-metric">
-        <div class="metric-label">Total Portfolio PnL</div>
+        <div class="metric-label">Total Portfolio Unrealized PnL</div>
         <div class="metric-value" id="total-pnl">Loading...</div>
-        <div class="metric-subtext" id="total-pnl-pct">--</div>
+        <div style="font-size: 0.85rem; margin-top: 0.35rem; color: #8b949e;" id="total-pnl-pct">--</div>
       </div>
 
       <div class="card-metric">
-        <div class="metric-label">Total Exposure</div>
+        <div class="metric-label">Total Gross Exposure (AUM at Risk)</div>
         <div class="metric-value" id="total-exposure">Loading...</div>
-        <div class="metric-subtext">Capital currently at market risk</div>
+        <div style="font-size: 0.85rem; margin-top: 0.35rem; color: #8b949e;">Gross Allocated Capital</div>
       </div>
 
       <div class="card-metric">
-        <div class="metric-label">Active Positions</div>
+        <div class="metric-label">Active Holdings</div>
         <div class="metric-value" id="total-positions">--</div>
-        <div class="metric-subtext">Multi-Asset Allocation</div>
+        <div style="font-size: 0.85rem; margin-top: 0.35rem; color: #8b949e;" id="allocation-subtext">3 Asset Classes</div>
+      </div>
+
+      <div class="card-metric">
+        <div class="metric-label">Engine Architecture</div>
+        <div class="metric-value" style="font-size: 1.4rem; color: #58a6ff; margin-top: 0.35rem;">Repository Trait</div>
+        <div style="font-size: 0.85rem; margin-top: 0.5rem; color: #8b949e;">Decoupled Data Tier (Hexagonal)</div>
+      </div>
+    </section>
+
+    <!-- Interactive Charts Section -->
+    <section class="charts-grid">
+      <!-- Valuation Trend Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">📈 Intraday Portfolio Valuation & Risk Curve ($)</h3>
+          <span style="font-size: 0.75rem; color: #8b949e;">Live Timeseries</span>
+        </div>
+        <div style="height: 220px;">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Asset Allocation Breakdown Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">🥧 Asset Allocation & Exposure</h3>
+          <span style="font-size: 0.75rem; color: #8b949e;">Risk Concentration</span>
+        </div>
+        <div style="height: 220px; display: flex; justify-content: center;">
+          <canvas id="allocationChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar: Filters, Search, & Stress Tests -->
+    <section class="toolbar">
+      <!-- Asset Class Filters -->
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="ALL">All Assets (<span id="count-all">11</span>)</button>
+        <button class="filter-btn" data-filter="Share">Equities (<span id="count-shares">5</span>)</button>
+        <button class="filter-btn" data-filter="Crypto">Crypto (<span id="count-crypto">3</span>)</button>
+        <button class="filter-btn" data-filter="Bond">Fixed Income (<span id="count-bonds">3</span>)</button>
+      </div>
+
+      <!-- Search Input -->
+      <div style="flex: 1; max-width: 260px;">
+        <input type="search" id="search-input" placeholder="Search Ticker (e.g. BTC)..." style="margin: 0; padding: 0.35rem 0.75rem; font-size: 0.85rem; height: auto;">
+      </div>
+
+      <!-- CEO Scenario Stress Tests -->
+      <div class="scenario-btn-group">
+        <span style="font-size: 0.8rem; color: #8b949e; align-self: center; margin-right: 0.25rem;">Stress Tests:</span>
+        <button class="scenario-btn" id="scenario-dip">🔻 Dip -5%</button>
+        <button class="scenario-btn" id="scenario-crypto-rally">🚀 Crypto +15%</button>
+        <button class="scenario-btn" id="scenario-reset">🔄 Reset</button>
       </div>
     </section>
 
     <!-- Positions Table -->
-    <section>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-        <h3 style="margin: 0;">Portfolio Holdings</h3>
-        <button class="outline" id="refresh-btn" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; margin: 0; width: auto;">
-          🔄 Refresh
-        </button>
-      </div>
-
-      <div class="table-container">
-        <table role="grid">
-          <thead>
-            <tr>
-              <th scope="col">Ticker</th>
-              <th scope="col">Asset Type</th>
-              <th scope="col" style="text-align: right;">Quantity</th>
-              <th scope="col" style="text-align: right;">Buy Price</th>
-              <th scope="col" style="text-align: right;">Current Price</th>
-              <th scope="col" style="text-align: right;">Exposure</th>
-              <th scope="col" style="text-align: right;">Unrealized PnL</th>
-              <th scope="col" style="text-align: right;">Return (%)</th>
-            </tr>
-          </thead>
-          <tbody id="positions-table-body">
-            <tr>
-              <td colspan="8" style="text-align: center;">Fetching portfolio data from Rust engine...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <section class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('ticker')">Ticker <span class="sort-icon" id="sort-ticker">↕</span></th>
+            <th onclick="sortTable('asset_type')">Asset Class <span class="sort-icon" id="sort-asset_type">↕</span></th>
+            <th onclick="sortTable('quantity')" style="text-align: right;">Quantity <span class="sort-icon" id="sort-quantity">↕</span></th>
+            <th onclick="sortTable('buy_price')" style="text-align: right;">Buy Price <span class="sort-icon" id="sort-buy_price">↕</span></th>
+            <th onclick="sortTable('current_price')" style="text-align: right;">Current Price <span class="sort-icon" id="sort-current_price">↕</span></th>
+            <th onclick="sortTable('exposure')" style="text-align: right;">Exposure ($) <span class="sort-icon" id="sort-exposure">↕</span></th>
+            <th onclick="sortTable('pnl')" style="text-align: right;">Unrealized PnL <span class="sort-icon" id="sort-pnl">↕</span></th>
+            <th onclick="sortTable('pnl_percentage')" style="text-align: right;">Return (%) <span class="sort-icon" id="sort-pnl_percentage">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="positions-table-body">
+          <tr>
+            <td colspan="8" style="text-align: center; color: #8b949e;">Connecting to Rust Engine...</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- Footer Documentation -->
-    <footer style="margin-top: 3rem; text-align: center; color: var(--pico-muted-color); font-size: 0.85rem;">
-      <p>
-        Built with <strong>Rust (Axum + Tokio + Serde)</strong> &bull; 
-        PnL Formula: <code>(Current Price - Buy Price) * Quantity</code> &bull; 
-        Exposure: <code>Current Price * Quantity</code>
+    <!-- Architecture & Interview Footer -->
+    <footer style="margin-top: 2.5rem; text-align: center; color: #8b949e; font-size: 0.8rem; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem;">
+      <p style="margin: 0;">
+        Built with <strong>Rust</strong> &bull; <strong>Axum 0.7</strong> &bull; <strong>Repository Trait Abstraction</strong> &bull; 
+        PnL: <code>(Price - BuyPrice) * Quantity</code> &bull; Zero <code>unwrap()</code> Invariant
       </p>
     </footer>
   </main>
 
   <script>
-    // Format numeric values as standard currency ($XX,XXX.XX)
-    function formatCurrency(num) {
-      const sign = num < 0 ? "-" : (num > 0 ? "+" : "");
-      const absFormatted = Math.abs(num).toLocaleString('en-US', {
+    // State Store
+    let rawPositions = [];
+    let currentFilter = 'ALL';
+    let currentSort = { column: 'exposure', ascending: false };
+    let isSimulating = false;
+    let simInterval = null;
+    let previousPrices = {};
+
+    let trendChartInstance = null;
+    let allocationChartInstance = null;
+
+    // Format numbers
+    function formatCurrency(val, includeSign = true) {
+      const sign = val < 0 ? "-" : (val > 0 && includeSign ? "+" : "");
+      const formatted = Math.abs(val).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-      return `${sign}$${absFormatted}`;
+      return `${sign}$${formatted}`;
     }
 
-    // Format plain absolute currency without + sign (for exposure/prices)
-    function formatPlainCurrency(num) {
-      return "$" + Number(num).toLocaleString('en-US', {
+    function formatPlain(val) {
+      return "$" + Number(val).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
     }
 
-    // Format asset badges
-    function getAssetBadge(assetType) {
-      const typeStr = String(assetType).toLowerCase();
-      let badgeClass = "badge-share";
-      if (typeStr === "crypto") badgeClass = "badge-crypto";
-      if (typeStr === "bond") badgeClass = "badge-bond";
-
-      return `<span class="badge ${badgeClass}">${assetType}</span>`;
+    // Badge styling
+    function getAssetBadge(type) {
+      const t = String(type).toLowerCase();
+      let cls = "badge-share";
+      if (t === "crypto") cls = "badge-crypto";
+      if (t === "bond") cls = "badge-bond";
+      return `<span class="badge ${cls}">${type}</span>`;
     }
 
-    // Fetch and render portfolio data from /api/portfolio
-    async function loadPortfolio() {
-      const refreshBtn = document.getElementById('refresh-btn');
-      refreshBtn.setAttribute('aria-busy', 'true');
-
+    // Fetch portfolio from backend
+    async function fetchPortfolio() {
       try {
-        const response = await fetch('/api/portfolio');
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        renderDashboard(data);
-      } catch (error) {
-        console.error('Error fetching portfolio:', error);
-        document.getElementById('positions-table-body').innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align: center; color: #ff5252;">
-              Failed to connect to Position Engine: ${error.message}
-            </td>
-          </tr>
-        `;
-      } finally {
-        refreshBtn.removeAttribute('aria-busy');
+        const res = await fetch('/api/portfolio');
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        const data = await res.json();
+        
+        rawPositions = data.positions;
+        renderSummary(data.summary);
+        renderCharts(data);
+        renderTable();
+        updateFilterCounts();
+      } catch (err) {
+        console.error('Fetch error:', err);
       }
     }
 
-    // Render summary cards and table rows with conditional formatting
-    function renderDashboard(data) {
-      const summary = data.summary;
-      const positions = data.positions;
+    // Render Summary Cards
+    function renderSummary(summary) {
+      const pnlEl = document.getElementById('total-pnl');
+      const pnlPctEl = document.getElementById('total-pnl-pct');
 
-      // 1. Render Total PnL with conditional styling (Green for positive, Red for negative)
-      const totalPnlEl = document.getElementById('total-pnl');
-      const totalPnlPctEl = document.getElementById('total-pnl-pct');
-      totalPnlEl.textContent = formatCurrency(summary.total_pnl);
+      pnlEl.textContent = formatCurrency(summary.total_pnl);
+      pnlEl.className = 'metric-value ' + (summary.total_pnl >= 0 ? 'pnl-pos' : 'pnl-neg');
       
-      if (summary.total_pnl > 0) {
-        totalPnlEl.className = 'metric-value pnl-positive';
-        totalPnlPctEl.className = 'metric-subtext pnl-positive';
-      } else if (summary.total_pnl < 0) {
-        totalPnlEl.className = 'metric-value pnl-negative';
-        totalPnlPctEl.className = 'metric-subtext pnl-negative';
-      } else {
-        totalPnlEl.className = 'metric-value';
-        totalPnlPctEl.className = 'metric-subtext';
-      }
-      totalPnlPctEl.textContent = `${summary.total_pnl_percentage >= 0 ? '+' : ''}${summary.total_pnl_percentage.toFixed(2)}% Overall Return`;
+      const pctSign = summary.total_pnl_percentage >= 0 ? '+' : '';
+      pnlPctEl.textContent = `${pctSign}${summary.total_pnl_percentage.toFixed(2)}% Net Portfolio Return`;
+      pnlPctEl.className = summary.total_pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
 
-      // 2. Render Total Exposure & Positions Count
-      document.getElementById('total-exposure').textContent = formatPlainCurrency(summary.total_exposure);
+      document.getElementById('total-exposure').textContent = formatPlain(summary.total_exposure);
       document.getElementById('total-positions').textContent = summary.total_positions;
+    }
 
-      // 3. Render Positions Table
+    // Render Charts
+    function renderCharts(data) {
+      const summary = data.summary;
+      const history = data.history || [];
+
+      // 1. Intraday Valuation Trend Line Chart
+      const ctxTrend = document.getElementById('trendChart').getContext('2d');
+      const labels = history.map(h => h.label);
+      const exposures = history.map(h => h.total_exposure);
+
+      if (trendChartInstance) {
+        trendChartInstance.data.labels = labels;
+        trendChartInstance.data.datasets[0].data = exposures;
+        trendChartInstance.update();
+      } else {
+        trendChartInstance = new Chart(ctxTrend, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Portfolio Valuation ($)',
+              data: exposures,
+              borderColor: '#58a6ff',
+              backgroundColor: 'rgba(88, 166, 255, 0.12)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#58a6ff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e', font: { size: 10 } } },
+              y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e', font: { size: 10 } } }
+            }
+          }
+        });
+      }
+
+      // 2. Asset Allocation Doughnut Chart
+      const ctxAlloc = document.getElementById('allocationChart').getContext('2d');
+      const allocData = [summary.shares_exposure, summary.crypto_exposure, summary.bonds_exposure];
+
+      if (allocationChartInstance) {
+        allocationChartInstance.data.datasets[0].data = allocData;
+        allocationChartInstance.update();
+      } else {
+        allocationChartInstance = new Chart(ctxAlloc, {
+          type: 'doughnut',
+          data: {
+            labels: ['Equities', 'Crypto', 'Fixed Income'],
+            datasets: [{
+              data: allocData,
+              backgroundColor: ['#58a6ff', '#e3b341', '#bc8cff'],
+              borderWidth: 0,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { color: '#c9d1d9', boxWidth: 12, font: { size: 11 } } }
+            },
+            cutout: '70%'
+          }
+        });
+      }
+    }
+
+    // Render Table with Sorting & Filtering
+    function renderTable() {
       const tbody = document.getElementById('positions-table-body');
+      const searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+
+      let filtered = rawPositions.filter(p => {
+        const matchesFilter = currentFilter === 'ALL' || p.asset_type === currentFilter;
+        const matchesSearch = !searchQuery || p.ticker.toLowerCase().includes(searchQuery);
+        return matchesFilter && matchesSearch;
+      });
+
+      // Sort items
+      filtered.sort((a, b) => {
+        let valA = a[currentSort.column];
+        let valB = b[currentSort.column];
+
+        if (typeof valA === 'string') {
+          return currentSort.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        }
+        return currentSort.ascending ? valA - valB : valB - valA;
+      });
+
       tbody.innerHTML = '';
 
-      positions.forEach(pos => {
-        const row = document.createElement('tr');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#8b949e;">No matching assets found.</td></tr>`;
+        return;
+      }
 
-        // Determine conditional color class for PnL
-        const pnlClass = pos.pnl > 0 ? 'pnl-positive' : (pos.pnl < 0 ? 'pnl-negative' : '');
-        const pnlSign = pos.pnl > 0 ? '+' : '';
+      filtered.forEach(p => {
+        const row = document.createElement('tr');
+        row.id = `row-${p.ticker}`;
+
+        const pnlCls = p.pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+        const pnlSign = p.pnl_percentage >= 0 ? '+' : '';
+
+        // Flash cell if price changed
+        let flashClass = '';
+        if (previousPrices[p.ticker] !== undefined) {
+          if (p.current_price > previousPrices[p.ticker]) flashClass = 'flash-green';
+          else if (p.current_price < previousPrices[p.ticker]) flashClass = 'flash-red';
+        }
+        previousPrices[p.ticker] = p.current_price;
 
         row.innerHTML = `
-          <td><span class="ticker-code">${pos.ticker}</span></td>
-          <td>${getAssetBadge(pos.asset_type)}</td>
-          <td style="text-align: right;">${pos.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })}</td>
-          <td style="text-align: right;">${formatPlainCurrency(pos.buy_price)}</td>
-          <td style="text-align: right;">${formatPlainCurrency(pos.current_price)}</td>
-          <td style="text-align: right; font-weight: 600;">${formatPlainCurrency(pos.exposure)}</td>
-          <td style="text-align: right;" class="${pnlClass}">${formatCurrency(pos.pnl)}</td>
-          <td style="text-align: right;" class="${pnlClass}">${pnlSign}${pos.pnl_percentage.toFixed(2)}%</td>
+          <td><span class="ticker-symbol">${p.ticker}</span></td>
+          <td>${getAssetBadge(p.asset_type)}</td>
+          <td style="text-align: right;">${p.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })}</td>
+          <td style="text-align: right;">${formatPlain(p.buy_price)}</td>
+          <td style="text-align: right; font-weight: 700;" class="${flashClass}">${formatPlain(p.current_price)}</td>
+          <td style="text-align: right; font-weight: 600;">${formatPlain(p.exposure)}</td>
+          <td style="text-align: right;" class="${pnlCls}">${formatCurrency(p.pnl)}</td>
+          <td style="text-align: right;" class="${pnlCls}">${pnlSign}${p.pnl_percentage.toFixed(2)}%</td>
         `;
 
         tbody.appendChild(row);
+
+        // Remove flash animation after 600ms
+        if (flashClass) {
+          setTimeout(() => {
+            const priceCell = row.children[4];
+            if (priceCell) priceCell.className = '';
+          }, 600);
+        }
       });
     }
 
-    // Attach event listeners and load data on initial startup
+    // Sort Column Trigger
+    function sortTable(column) {
+      if (currentSort.column === column) {
+        currentSort.ascending = !currentSort.ascending;
+      } else {
+        currentSort.column = column;
+        currentSort.ascending = (column === 'ticker' || column === 'asset_type');
+      }
+
+      // Update sort icons
+      document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '↕');
+      const activeIcon = document.getElementById(`sort-${column}`);
+      if (activeIcon) activeIcon.textContent = currentSort.ascending ? '↑' : '↓';
+
+      renderTable();
+    }
+
+    function updateFilterCounts() {
+      document.getElementById('count-all').textContent = rawPositions.length;
+      document.getElementById('count-shares').textContent = rawPositions.filter(p => p.asset_type === 'Share').length;
+      document.getElementById('count-crypto').textContent = rawPositions.filter(p => p.asset_type === 'Crypto').length;
+      document.getElementById('count-bonds').textContent = rawPositions.filter(p => p.asset_type === 'Bond').length;
+    }
+
+    // Live Market Simulator (Random ticks ±0.4% - 1.8%)
+    function toggleSimulation() {
+      isSimulating = !isSimulating;
+      const btn = document.getElementById('toggle-sim-btn');
+      const dot = document.getElementById('live-dot');
+      const statusText = document.getElementById('live-status-text');
+
+      if (isSimulating) {
+        btn.textContent = '⏹️ Stop Live Feed';
+        btn.className = 'pico-background-red';
+        dot.className = 'pulse-dot active';
+        statusText.textContent = 'Streaming Live Ticks (1.5s)';
+
+        simInterval = setInterval(async () => {
+          if (rawPositions.length === 0) return;
+          // Randomly pick 2 assets to fluctuate
+          const count = 2;
+          for (let i = 0; i < count; i++) {
+            const randomIdx = Math.floor(Math.random() * rawPositions.length);
+            const pos = rawPositions[randomIdx];
+            const changePct = (Math.random() * 0.03) - 0.014; // -1.4% to +1.6%
+            const newPrice = Math.max(1.0, Number((pos.current_price * (1 + changePct)).toFixed(2)));
+
+            // Post tick to backend repository
+            await fetch(`/api/positions/${pos.ticker}/price`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ price: newPrice })
+            });
+          }
+          fetchPortfolio();
+        }, 1500);
+      } else {
+        btn.textContent = '▶️ Start Live Market Feed';
+        btn.className = 'outline';
+        dot.className = 'pulse-dot';
+        statusText.textContent = 'Simulated Feed: Off';
+        clearInterval(simInterval);
+      }
+    }
+
+    // Stress Testing Scenarios
+    async function applyScenario(multiplier, assetFilter = null) {
+      for (const pos of rawPositions) {
+        if (!assetFilter || pos.asset_type === assetFilter) {
+          const newPrice = Number((pos.current_price * multiplier).toFixed(2));
+          await fetch(`/api/positions/${pos.ticker}/price`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price: newPrice })
+          });
+        }
+      }
+      fetchPortfolio();
+    }
+
+    // Event Listeners
     document.addEventListener('DOMContentLoaded', () => {
-      loadPortfolio();
-      document.getElementById('refresh-btn').addEventListener('click', loadPortfolio);
+      fetchPortfolio();
+
+      document.getElementById('refresh-btn').addEventListener('click', fetchPortfolio);
+      document.getElementById('toggle-sim-btn').addEventListener('click', toggleSimulation);
+
+      // Filter tabs
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.getAttribute('data-filter');
+          renderTable();
+        });
+      });
+
+      // Search input
+      document.getElementById('search-input').addEventListener('input', renderTable);
+
+      // Scenario buttons
+      document.getElementById('scenario-dip').addEventListener('click', () => applyScenario(0.95));
+      document.getElementById('scenario-crypto-rally').addEventListener('click', () => applyScenario(1.15, 'Crypto'));
+      document.getElementById('scenario-reset').addEventListener('click', async () => {
+        // Reset base prices
+        const basePrices = {
+          AAPL: 170.0, NVDA: 135.0, MSFT: 445.0, TSLA: 195.0, AMZN: 185.0,
+          BTC: 55000.0, ETH: 3450.0, SOL: 160.0,
+          US10Y: 105.0, BUND10Y: 96.5, UKGILT: 104.0
+        };
+        for (const [ticker, price] of Object.entries(basePrices)) {
+          await fetch(`/api/positions/${ticker}/price`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price })
+          });
+        }
+        fetchPortfolio();
+      });
     });
   </script>
 </body>

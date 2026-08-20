@@ -8,43 +8,47 @@ Designed to demonstrate **clean domain modeling**, **financial precision**, **ze
 
 ## 📐 System Architecture
 
-### 1. High-Level Architecture Diagram
+### 1. High-Level Architecture Diagram (Hexagonal / Repository Pattern)
 ```mermaid
 flowchart TB
-    subgraph Client ["Client Browser (Presentation Layer)"]
-        UI["Pico.css v2 Dashboard (static/index.html)"]
-        JS["Vanilla JS Engine (Fetch API & Dynamic DOM)"]
+    subgraph Client ["Client Presentation Layer (Executive Dashboard)"]
+        UI["Pico.css v2 + Chart.js Dashboard (static/index.html)"]
+        JS["Live Simulator & Interactive Filters Engine"]
         UI --- JS
     end
 
     subgraph WebServer ["Rust HTTP Engine (Axum 0.7 + Tokio)"]
         Router["Axum Router & TraceLayer"]
         ServeDir["Tower-HTTP Static File Service"]
-        Handler["API Handler: handlers::get_portfolio"]
+        Handler["API Handlers: get_portfolio & update_asset_price"]
         Router -->|GET /| ServeDir
         Router -->|GET /api/portfolio| Handler
+        Router -->|POST /api/positions/:ticker/price| Handler
     end
 
-    subgraph StateLayer ["Thread-Safe State & Memory"]
-        State["Arc<RwLock<Vec<Position>>>"]
-        MockData["mock_data::get_mock_positions()"]
-        MockData -.->|Initial Seed| State
-        Handler -->|Read Lock| State
+    subgraph ArchitecturePattern ["Repository Trait Abstraction (System Design)"]
+        RepoTrait["trait PositionRepository (Send + Sync)"]
+        InMemRepo["InMemoryPositionRepository (RwLock<Vec<Position>>)"]
+        FutureSQL["PostgresPositionRepository / Redis (Future Adapter)"]
+        
+        RepoTrait -.->|Implements| InMemRepo
+        RepoTrait -.->|Future Plug-in| FutureSQL
+        Handler -->|Dependency Injection: Arc<dyn PositionRepository>| RepoTrait
     end
 
     subgraph DomainLayer ["Core Domain & Financial Mathematics"]
         Domain["domain::build_portfolio_response(&[Position])"]
         PosCalc["Position::calculate_pnl()<br/>Position::calculate_exposure()"]
-        AggCalc["PortfolioSummary Aggregator"]
+        AggCalc["PortfolioSummary & Risk Allocation Breakdown"]
         
-        State --> Domain
+        InMemRepo --> Domain
         Domain --> PosCalc
         Domain --> AggCalc
     end
 
-    JS -->|HTTP GET /| Router
     JS -->|HTTP GET /api/portfolio| Router
-    Domain -->|PortfolioResponse DTO (JSON)| Handler
+    JS -->|HTTP POST Price Ticks / Scenarios| Router
+    Domain -->|PortfolioResponse + History DTO (JSON)| Handler
     Handler -->|HTTP 200 OK + JSON Payload| JS
 ```
 

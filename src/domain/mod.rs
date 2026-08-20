@@ -5,6 +5,8 @@ pub mod position;
 #[allow(unused_imports)]
 pub use asset::AssetType;
 #[allow(unused_imports)]
-pub use portfolio::{build_portfolio_response, PortfolioResponse, PortfolioSummary};
+pub use portfolio::{
+    build_portfolio_response, HistoryPoint, PortfolioResponse, PortfolioSummary,
+};
 #[allow(unused_imports)]
 pub use position::{Position, PositionView};

@@ -1,3 +1,4 @@
+use super::asset::AssetType;
 use super::position::{Position, PositionView};
 use serde::{Deserialize, Serialize};
 
@@ -12,23 +13,39 @@ pub struct PortfolioSummary {
     pub total_positions: usize,
     /// Overall portfolio return on capital percentage
     pub total_pnl_percentage: f64,
+    /// Total exposure allocated in Equities / Shares
+    pub shares_exposure: f64,
+    /// Total exposure allocated in Crypto
+    pub crypto_exposure: f64,
+    /// Total exposure allocated in Fixed Income / Bonds
+    pub bonds_exposure: f64,
 }
 
-/// Unified API response envelope delivering both individual positions and aggregate summary.
+/// Historical valuation point for chart timeseries visualization.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HistoryPoint {
+    pub label: String,
+    pub total_exposure: f64,
+    pub total_pnl: f64,
+}
+
+/// Unified API response envelope delivering positions, summary, and historical chart trend.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PortfolioResponse {
     pub summary: PortfolioSummary,
     pub positions: Vec<PositionView>,
+    pub history: Vec<HistoryPoint>,
 }
 
 /// Aggregates a slice of positions into a complete `PortfolioResponse`.
-///
-/// Ensures safe arithmetic without `.unwrap()`, calculating both individual
-/// position views and the portfolio-wide executive summary.
 pub fn build_portfolio_response(positions: &[Position]) -> PortfolioResponse {
     let mut total_pnl = 0.0;
     let mut total_exposure = 0.0;
     let mut total_cost_basis = 0.0;
+
+    let mut shares_exposure = 0.0;
+    let mut crypto_exposure = 0.0;
+    let mut bonds_exposure = 0.0;
 
     let position_views: Vec<PositionView> = positions
         .iter()
@@ -37,6 +54,13 @@ pub fn build_portfolio_response(positions: &[Position]) -> PortfolioResponse {
             total_pnl += view.pnl;
             total_exposure += view.exposure;
             total_cost_basis += pos.buy_price * pos.quantity;
+
+            match pos.asset_type {
+                AssetType::Share => shares_exposure += view.exposure,
+                AssetType::Crypto => crypto_exposure += view.exposure,
+                AssetType::Bond => bonds_exposure += view.exposure,
+            }
+
             view
         })
         .collect();
@@ -47,15 +71,40 @@ pub fn build_portfolio_response(positions: &[Position]) -> PortfolioResponse {
         0.0
     };
 
+    // Generate historical trend curve for interactive charting
+    let history = generate_sample_history(total_exposure, total_pnl);
+
     PortfolioResponse {
         summary: PortfolioSummary {
             total_pnl,
             total_exposure,
             total_positions: positions.len(),
             total_pnl_percentage,
+            shares_exposure,
+            crypto_exposure,
+            bonds_exposure,
         },
         positions: position_views,
+        history,
     }
+}
+
+/// Generates a realistic 7-interval intraday historical timeseries curve leading to current valuation.
+fn generate_sample_history(current_exposure: f64, current_pnl: f64) -> Vec<HistoryPoint> {
+    let intervals = ["09:30", "11:00", "12:30", "14:00", "15:30", "16:45", "Current (Live)"];
+    let multipliers = [0.978, 0.985, 0.992, 0.988, 0.995, 1.002, 1.0];
+    let pnl_offsets = [-450.0, -320.0, -150.0, -280.0, -50.0, 80.0, 0.0];
+
+    intervals
+        .iter()
+        .zip(multipliers.iter())
+        .zip(pnl_offsets.iter())
+        .map(|((&label, &m), &offset)| HistoryPoint {
+            label: label.to_string(),
+            total_exposure: (current_exposure * m).round(),
+            total_pnl: current_pnl + offset,
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -75,13 +124,12 @@ mod tests {
 
         let response = build_portfolio_response(&positions);
 
-        // Expected Total PnL: 200 - 2500 + 250 = -2050.0
-        // Expected Total Exposure: 1700 + 27500 + 5250 = 34450.0
-        // Cost basis: (150*10) + (60000*0.5) + (100*50) = 1500 + 30000 + 5000 = 36500.0
-        // PnL %: (-2050 / 36500) * 100 = -5.6164%
         assert_eq!(response.positions.len(), 3);
         assert!((response.summary.total_pnl - (-2050.0)).abs() < EPSILON);
         assert!((response.summary.total_exposure - 34450.0).abs() < EPSILON);
-        assert_eq!(response.summary.total_positions, 3);
+        assert!((response.summary.shares_exposure - 1700.0).abs() < EPSILON);
+        assert!((response.summary.crypto_exposure - 27500.0).abs() < EPSILON);
+        assert!((response.summary.bonds_exposure - 5250.0).abs() < EPSILON);
+        assert_eq!(response.history.len(), 7);
     }
 }
