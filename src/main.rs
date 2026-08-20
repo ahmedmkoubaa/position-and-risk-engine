@@ -1,12 +1,6 @@
-mod domain;
-mod handlers;
-mod mock_data;
-
-use axum::{routing::get, Router};
+use position_and_risk_engine::{create_app, mock_data};
 use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::RwLock;
-use tower_http::services::ServeDir;
-use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -26,14 +20,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let initial_positions = mock_data::get_mock_positions();
     let state = Arc::new(RwLock::new(initial_positions));
 
-    // Build the Axum application router
-    // 1. API endpoint for portfolio analytics: GET /api/portfolio
-    // 2. Static file serving (serves index.html at root `/`): fallback to static/
-    let app = Router::new()
-        .route("/api/portfolio", get(handlers::get_portfolio))
-        .fallback_service(ServeDir::new("static"))
-        .layer(TraceLayer::new_for_http())
-        .with_state(state);
+    // Build the Axum application router using the factory
+    let app = create_app(state);
 
     // Bind server to address
     let port = 3000;
