@@ -21,23 +21,23 @@ flowchart TB
         Router["Axum Router & TraceLayer"]
         ServeDir["Tower-HTTP Static File Service"]
         Handler["API Handlers: get_portfolio & update_asset_price"]
-        Router -->|GET /| ServeDir
-        Router -->|GET /api/portfolio| Handler
-        Router -->|POST /api/positions/:ticker/price| Handler
+        Router -->|"GET /"| ServeDir
+        Router -->|"GET /api/portfolio"| Handler
+        Router -->|"POST /api/positions/:ticker/price"| Handler
     end
 
     subgraph ArchitecturePattern ["Repository Trait Abstraction (System Design)"]
         RepoTrait["trait PositionRepository (Send + Sync)"]
-        InMemRepo["InMemoryPositionRepository (RwLock<Vec<Position>>)"]
+        InMemRepo["InMemoryPositionRepository (RwLock)"]
         FutureSQL["PostgresPositionRepository / Redis (Future Adapter)"]
         
-        RepoTrait -.->|Implements| InMemRepo
-        RepoTrait -.->|Future Plug-in| FutureSQL
-        Handler -->|Dependency Injection: Arc<dyn PositionRepository>| RepoTrait
+        RepoTrait -.->|"Implements"| InMemRepo
+        RepoTrait -.->|"Future Plug-in"| FutureSQL
+        Handler -->|"Dependency Injection"| RepoTrait
     end
 
     subgraph DomainLayer ["Core Domain & Financial Mathematics"]
-        Domain["domain::build_portfolio_response(&[Position])"]
+        Domain["domain::build_portfolio_response"]
         PosCalc["Position::calculate_pnl()<br/>Position::calculate_exposure()"]
         AggCalc["PortfolioSummary & Risk Allocation Breakdown"]
         
@@ -46,10 +46,10 @@ flowchart TB
         Domain --> AggCalc
     end
 
-    JS -->|HTTP GET /api/portfolio| Router
-    JS -->|HTTP POST Price Ticks / Scenarios| Router
-    Domain -->|PortfolioResponse + History DTO (JSON)| Handler
-    Handler -->|HTTP 200 OK + JSON Payload| JS
+    JS -->|"HTTP GET /api/portfolio"| Router
+    JS -->|"HTTP POST Price Ticks / Scenarios"| Router
+    Domain -->|"PortfolioResponse & History DTO"| Handler
+    Handler -->|"HTTP 200 OK (JSON)"| JS
 ```
 
 ---
